@@ -1055,6 +1055,3 @@ which is a defensible engineering call to explain, not a gap to hide.
 | 4 | Phase 8 (integrate video features with stats) + Phase 9 (Exploratory Factor Analysis) + Phase 10 (dashboard) |
 
 ---
-Next: send me squad jersey numbers whenever you're ready, and your first
-match CSV(s) — I'll run them through the pipeline and we can move to
-**Phase 2**.
