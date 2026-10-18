@@ -1,0 +1,281 @@
+{
+  "stats_only": {
+    "n_rows": 78,
+    "n_features": 46,
+    "include_video_features": false,
+    "cv_scheme": "kfold",
+    "cv_folds": 5,
+    "random_forest": {
+      "mae": 0.346,
+      "mae_std": 0.149,
+      "rmse": 0.48,
+      "r2": 0.404
+    },
+    "dummy_mean_baseline": {
+      "mae": 0.52,
+      "mae_std": 0.166,
+      "rmse": 0.659,
+      "r2": -0.132
+    },
+    "beats_dummy_baseline_on_mae": true,
+    "top_10_feature_importances": [
+      {
+        "feature": "goal_contributions",
+        "importance": 0.4616
+      },
+      {
+        "feature": "defensive_actions",
+        "importance": 0.1427
+      },
+      {
+        "feature": "key_passes",
+        "importance": 0.0438
+      },
+      {
+        "feature": "minutes",
+        "importance": 0.0351
+      },
+      {
+        "feature": "xa",
+        "importance": 0.0255
+      },
+      {
+        "feature": "xg",
+        "importance": 0.0253
+      },
+      {
+        "feature": "xa_per90",
+        "importance": 0.0203
+      },
+      {
+        "feature": "goals",
+        "importance": 0.0201
+      },
+      {
+        "feature": "progressive_passes",
+        "importance": 0.0183
+      },
+      {
+        "feature": "dribbles_completed",
+        "importance": 0.0174
+      }
+    ]
+  },
+  "stats_plus_video": {
+    "n_rows": 78,
+    "n_features": 53,
+    "include_video_features": true,
+    "cv_scheme": "kfold",
+    "cv_folds": 5,
+    "random_forest": {
+      "mae": 0.329,
+      "mae_std": 0.153,
+      "rmse": 0.455,
+      "r2": 0.482
+    },
+    "dummy_mean_baseline": {
+      "mae": 0.52,
+      "mae_std": 0.166,
+      "rmse": 0.659,
+      "r2": -0.132
+    },
+    "beats_dummy_baseline_on_mae": true,
+    "top_10_feature_importances": [
+      {
+        "feature": "goal_contributions",
+        "importance": 0.4493
+      },
+      {
+        "feature": "defensive_actions",
+        "importance": 0.1364
+      },
+      {
+        "feature": "key_passes",
+        "importance": 0.0454
+      },
+      {
+        "feature": "minutes",
+        "importance": 0.0302
+      },
+      {
+        "feature": "xg",
+        "importance": 0.0287
+      },
+      {
+        "feature": "xa",
+        "importance": 0.0236
+      },
+      {
+        "feature": "goals",
+        "importance": 0.0211
+      },
+      {
+        "feature": "goals_minus_xg",
+        "importance": 0.0203
+      },
+      {
+        "feature": "avg_players_detected_per_frame",
+        "importance": 0.0181
+      },
+      {
+        "feature": "progressive_passes",
+        "importance": 0.0175
+      }
+    ]
+  },
+  "mae_delta_from_adding_video": -0.017,
+  "leave_one_match_out": {
+    "stats_only": {
+      "n_rows": 78,
+      "n_features": 46,
+      "include_video_features": false,
+      "cv_scheme": "leave_one_match_out",
+      "cv_folds": 5,
+      "random_forest": {
+        "mae": 0.376,
+        "mae_std": 0.241,
+        "rmse": 0.507,
+        "r2": -0.854
+      },
+      "dummy_mean_baseline": {
+        "mae": 0.57,
+        "mae_std": 0.257,
+        "rmse": 0.691,
+        "r2": -2.471
+      },
+      "beats_dummy_baseline_on_mae": true,
+      "top_10_feature_importances": [
+        {
+          "feature": "goal_contributions",
+          "importance": 0.4616
+        },
+        {
+          "feature": "defensive_actions",
+          "importance": 0.1427
+        },
+        {
+          "feature": "key_passes",
+          "importance": 0.0438
+        },
+        {
+          "feature": "minutes",
+          "importance": 0.0351
+        },
+        {
+          "feature": "xa",
+          "importance": 0.0255
+        },
+        {
+          "feature": "xg",
+          "importance": 0.0253
+        },
+        {
+          "feature": "xa_per90",
+          "importance": 0.0203
+        },
+        {
+          "feature": "goals",
+          "importance": 0.0201
+        },
+        {
+          "feature": "progressive_passes",
+          "importance": 0.0183
+        },
+        {
+          "feature": "dribbles_completed",
+          "importance": 0.0174
+        }
+      ]
+    },
+    "stats_plus_video": {
+      "n_rows": 78,
+      "n_features": 53,
+      "include_video_features": true,
+      "cv_scheme": "leave_one_match_out",
+      "cv_folds": 5,
+      "random_forest": {
+        "mae": 0.379,
+        "mae_std": 0.227,
+        "rmse": 0.504,
+        "r2": -0.822
+      },
+      "dummy_mean_baseline": {
+        "mae": 0.57,
+        "mae_std": 0.257,
+        "rmse": 0.691,
+        "r2": -2.471
+      },
+      "beats_dummy_baseline_on_mae": true,
+      "top_10_feature_importances": [
+        {
+          "feature": "goal_contributions",
+          "importance": 0.4493
+        },
+        {
+          "feature": "defensive_actions",
+          "importance": 0.1364
+        },
+        {
+          "feature": "key_passes",
+          "importance": 0.0454
+        },
+        {
+          "feature": "minutes",
+          "importance": 0.0302
+        },
+        {
+          "feature": "xg",
+          "importance": 0.0287
+        },
+        {
+          "feature": "xa",
+          "importance": 0.0236
+        },
+        {
+          "feature": "goals",
+          "importance": 0.0211
+        },
+        {
+          "feature": "goals_minus_xg",
+          "importance": 0.0203
+        },
+        {
+          "feature": "avg_players_detected_per_frame",
+          "importance": 0.0181
+        },
+        {
+          "feature": "progressive_passes",
+          "importance": 0.0175
+        }
+      ]
+    },
+    "mae_delta_from_adding_video": 0.003
+  },
+  "noise_floor_check": {
+    "per_match_mae_stats_only": {
+      "M001": 0.21027437484993217,
+      "M002": 0.8495623134575505,
+      "M003": 0.23805676452637153,
+      "M004": 0.3414108240490092,
+      "M005": 0.24273288299968382
+    },
+    "per_match_mae_stats_plus_video": {
+      "M001": 0.23167565616759506,
+      "M002": 0.8254871829589953,
+      "M003": 0.2426592352479096,
+      "M004": 0.34235112180917016,
+      "M005": 0.2527065258757886
+    },
+    "observed_mae_delta": 0.0026,
+    "seed_noise_range": [
+      -0.0049,
+      0.006
+    ],
+    "random_feature_delta_mean": 0.0044,
+    "random_feature_delta_std": 0.0077,
+    "random_feature_delta_range": [
+      -0.0091,
+      0.0231
+    ]
+  }
+}

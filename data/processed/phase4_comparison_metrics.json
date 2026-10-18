@@ -1,0 +1,185 @@
+{
+  "stats_only": {
+    "n_rows": 78,
+    "n_features": 46,
+    "include_video_features": false,
+    "cv_folds": 5,
+    "random_forest": {
+      "mae": 0.346,
+      "rmse": 0.48,
+      "r2": 0.403
+    },
+    "xgboost": {
+      "mae": 0.324,
+      "rmse": 0.452,
+      "r2": 0.469
+    },
+    "dummy_mean_baseline": {
+      "mae": 0.52,
+      "rmse": 0.659,
+      "r2": -0.132
+    },
+    "xgboost_beats_random_forest_on_mae": true,
+    "xgboost_beats_dummy_on_mae": true,
+    "xgboost_top_10_feature_importances": [
+      {
+        "feature": "assists",
+        "importance": 0.1496
+      },
+      {
+        "feature": "assists_per90",
+        "importance": 0.1481
+      },
+      {
+        "feature": "goal_contributions",
+        "importance": 0.1395
+      },
+      {
+        "feature": "key_passes",
+        "importance": 0.0556
+      },
+      {
+        "feature": "goals",
+        "importance": 0.0554
+      },
+      {
+        "feature": "goals_per90",
+        "importance": 0.0546
+      },
+      {
+        "feature": "interceptions",
+        "importance": 0.0507
+      },
+      {
+        "feature": "defensive_actions",
+        "importance": 0.0495
+      },
+      {
+        "feature": "shots_on_target_pct",
+        "importance": 0.0378
+      },
+      {
+        "feature": "minutes",
+        "importance": 0.0235
+      }
+    ],
+    "cv_scheme": "kfold"
+  },
+  "stats_plus_video": {
+    "n_rows": 78,
+    "n_features": 53,
+    "include_video_features": true,
+    "cv_scheme": "kfold",
+    "cv_folds": 5,
+    "random_forest": {
+      "mae": 0.329,
+      "rmse": 0.456,
+      "r2": 0.481
+    },
+    "xgboost": {
+      "mae": 0.309,
+      "rmse": 0.425,
+      "r2": 0.549
+    },
+    "dummy_mean_baseline": {
+      "mae": 0.52,
+      "rmse": 0.659,
+      "r2": -0.132
+    },
+    "xgboost_beats_random_forest_on_mae": true,
+    "xgboost_beats_dummy_on_mae": true,
+    "xgboost_top_10_feature_importances": [
+      {
+        "feature": "goal_contributions",
+        "importance": 0.1566
+      },
+      {
+        "feature": "goals",
+        "importance": 0.1255
+      },
+      {
+        "feature": "max_ajax_players_detected_per_frame",
+        "importance": 0.1041
+      },
+      {
+        "feature": "key_passes",
+        "importance": 0.0954
+      },
+      {
+        "feature": "assists",
+        "importance": 0.0667
+      },
+      {
+        "feature": "defensive_actions",
+        "importance": 0.0497
+      },
+      {
+        "feature": "avg_players_detected_per_frame",
+        "importance": 0.0485
+      },
+      {
+        "feature": "interceptions",
+        "importance": 0.0392
+      },
+      {
+        "feature": "avg_ajax_players_detected_per_frame",
+        "importance": 0.0279
+      },
+      {
+        "feature": "xg",
+        "importance": 0.0218
+      }
+    ]
+  },
+  "xgboost_mae_delta_from_adding_video": -0.015,
+  "random_forest_mae_delta_from_adding_video": -0.017,
+  "leave_one_match_out": {
+    "stats_only": {
+      "n_rows": 78,
+      "n_features": 46,
+      "include_video_features": false,
+      "cv_scheme": "leave_one_match_out",
+      "cv_folds": 5,
+      "random_forest": {
+        "mae": 0.376,
+        "rmse": 0.507,
+        "r2": -0.856
+      },
+      "xgboost": {
+        "mae": 0.419,
+        "rmse": 0.538,
+        "r2": -1.02
+      },
+      "dummy_mean_baseline": {
+        "mae": 0.57,
+        "rmse": 0.691,
+        "r2": -2.471
+      }
+    },
+    "stats_plus_video": {
+      "n_rows": 78,
+      "n_features": 53,
+      "include_video_features": true,
+      "cv_scheme": "leave_one_match_out",
+      "cv_folds": 5,
+      "random_forest": {
+        "mae": 0.379,
+        "rmse": 0.503,
+        "r2": -0.82
+      },
+      "xgboost": {
+        "mae": 0.409,
+        "rmse": 0.524,
+        "r2": -1.043
+      },
+      "dummy_mean_baseline": {
+        "mae": 0.57,
+        "rmse": 0.691,
+        "r2": -2.471
+      }
+    },
+    "xgboost_mae_delta_from_adding_video": -0.01,
+    "random_forest_mae_delta_from_adding_video": 0.003
+  },
+  "note": "Both CV schemes confirmed on the user's machine for XGBoost. The small XGBoost leave-one-match-out 'gain' (-0.010) was checked against a noise floor (src/modeling/noise_floor_check.py, run for Random Forest on real data) and found indistinguishable from what a meaningless per-match random number produces with only 5 groups (range -0.009 to +0.023). Final verdict: no reliable evidence video features help either model predict ratings on an unseen match."
+}

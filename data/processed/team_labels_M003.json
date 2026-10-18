@@ -1,0 +1,30 @@
+{
+  "match_id": "M003",
+  "n_clusters": 3,
+  "clusters": [
+    {
+      "cluster_id": 2,
+      "n_samples": 659,
+      "color_hex": "#263C4A",
+      "suggested_team": "ajax_away_blue",
+      "suggestion_distance": 10.7,
+      "team": "ajax"
+    },
+    {
+      "cluster_id": 1,
+      "n_samples": 558,
+      "color_hex": "#8A9551",
+      "suggested_team": null,
+      "suggestion_distance": null,
+      "team": "not_ajax"
+    },
+    {
+      "cluster_id": 0,
+      "n_samples": 550,
+      "color_hex": "#645D4A",
+      "suggested_team": null,
+      "suggestion_distance": null,
+      "team": "not_ajax"
+    }
+  ]
+}

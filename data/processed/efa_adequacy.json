@@ -1,0 +1,24 @@
+{
+  "adequacy": {
+    "n_obs": 68,
+    "n_vars": 15,
+    "obs_per_variable": 4.5,
+    "kmo_overall": 0.543,
+    "kmo_adequate": false,
+    "bartlett_chi2": 223.05,
+    "bartlett_dof": 105.0,
+    "bartlett_p_value": 0.0,
+    "bartlett_significant": true,
+    "n_factors_parallel_analysis": 3,
+    "n_factors_kaiser_criterion": 6
+  },
+  "load": {
+    "n_total_rows": 78,
+    "n_after_excluding_gk": 73,
+    "n_after_excluding_small_sample": 68,
+    "n_dropped_for_remaining_nan": 0,
+    "n_final": 68,
+    "n_variables": 15
+  },
+  "n_factors_used": 3
+}
