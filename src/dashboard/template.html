@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Eye Test — Ajax Performance Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* White + red, after Ajax's colours. Red is the brand accent (rules, bars, numbers);
+   amber is reserved for cautions so warnings don't blur into the brand colour. */
+:root{
+  color-scheme: light;
+  --bg:#FFFFFF;
+  --panel:#FAF6F6;
+  --zebra:#FCF9F9;
+  --ink:#1B1214;
+  --ink-soft:#645658;
+  --line:#E8DDDD;
+  --accent:#D2122E;
+  --accent-strong:#A80D25;
+  --accent-rgb:210,18,46;
+  --accent-tint:rgba(var(--accent-rgb),.07);
+  --accent-bar:rgba(var(--accent-rgb),.17);
+  --neutral-rgb:100,86,88;
+  --brand:#D2122E;
+  --on-brand:#FFFFFF;
+  --warn:#8A5300;
+  --warn-bg:#FFF6E5;
+  --warn-line:#D4900A;
+  --font-head:'Barlow Condensed','Arial Narrow','Helvetica Neue',Arial,sans-serif;
+  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:16px;
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#140E0F; --panel:#1D1415; --zebra:#181011; --ink:#F6EEEF; --ink-soft:#BBAAAD; --line:#37292B;
+  --accent:#FF4D60; --accent-strong:#FF8B98; --accent-rgb:255,77,96;
+  --accent-bar:rgba(var(--accent-rgb),.26); --neutral-rgb:200,185,188;
+  --brand:#B8112A; --on-brand:#FFFFFF;
+  --warn:#F2B552; --warn-bg:#2E2412; --warn-line:#C98B1C;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#140E0F; --panel:#1D1415; --zebra:#181011; --ink:#F6EEEF; --ink-soft:#BBAAAD; --line:#37292B;
+    --accent:#FF4D60; --accent-strong:#FF8B98; --accent-rgb:255,77,96;
+    --accent-bar:rgba(var(--accent-rgb),.26); --neutral-rgb:200,185,188;
+    --brand:#B8112A; --on-brand:#FFFFFF;
+    --warn:#F2B552; --warn-bg:#2E2412; --warn-line:#C98B1C;
+  }
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:var(--font-body); line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{font-family:var(--font-head); font-weight:700; margin:0 0 .4em; line-height:1.05; color:var(--ink);}
+h1{font-size:clamp(2.6rem,5.5vw,4rem); text-transform:uppercase; letter-spacing:.01em;}
+h2{font-size:2.05rem; text-transform:uppercase; letter-spacing:.02em; margin-bottom:.55em;}
+h2::after{content:""; display:block; width:56px; height:4px; background:var(--accent); margin-top:10px;}
+h3{font-size:1.3rem; font-weight:600; letter-spacing:.01em;}
+a{color:var(--accent-strong);}
+.mono{font-family:var(--font-mono); font-size:.92em;}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+.layout{display:flex; min-height:100vh;}
+nav.side{
+  width:244px; flex-shrink:0; position:sticky; top:0; height:100vh; overflow-y:auto;
+  border-right:1px solid var(--line); background:var(--bg); display:flex; flex-direction:column;
+}
+nav.side .brandblock{background:var(--brand); color:var(--on-brand); padding:28px 22px 22px;}
+nav.side .brand{font-family:var(--font-head); font-weight:700; font-size:2.1rem; text-transform:uppercase; letter-spacing:.02em; line-height:.92;}
+nav.side .brand-sub{font-size:.8rem; opacity:.92; margin-top:10px; line-height:1.35;}
+nav.side .links{padding:18px 22px 24px; display:flex; flex-direction:column;}
+nav.side a{
+  display:block; color:var(--ink-soft); text-decoration:none; font-size:.92rem;
+  padding:8px 0 8px 12px; border-left:3px solid transparent;
+}
+nav.side a:hover{color:var(--ink); border-left-color:var(--line);}
+nav.side a.active{color:var(--accent); font-weight:600; border-left-color:var(--accent);}
+
+main{flex:1; min-width:0; padding:46px 52px 110px; max-width:1040px;}
+section{padding-top:68px; scroll-margin-top:16px;}
+section:first-of-type{padding-top:0;}
+p.lede{color:var(--ink-soft); max-width:64ch; font-size:1.02rem;}
+p.small{font-size:.85rem;}
+
+/* hero: a thick vertical band, a nod to the home shirt */
+.hero{border-left:10px solid var(--accent); padding:2px 0 2px 24px;}
+.eyebrow{font-family:var(--font-mono); font-size:.74rem; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:600; margin-bottom:10px;}
+.hero p.lede{margin-bottom:0;}
+
+.stat-strip{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:16px; margin:32px 0 8px;}
+.stat{background:var(--panel); border:1px solid var(--line); border-top:4px solid var(--accent); padding:16px 18px 14px;}
+.stat .num{font-family:var(--font-head); font-weight:700; font-size:2.6rem; line-height:1; color:var(--accent);}
+.stat .label{font-size:.78rem; color:var(--ink-soft); margin-top:7px;}
+
+.callout{border:1px solid var(--line); border-left:5px solid var(--accent); background:var(--panel); padding:16px 20px; margin:20px 0;}
+.callout.warn{border-color:var(--warn-line); border-left-color:var(--warn-line); background:var(--warn-bg);}
+.callout p{margin:.5em 0;}
+.callout p:first-of-type{margin-top:0;} .callout p:last-child{margin-bottom:0;}
+.callout .tag{font-family:var(--font-mono); font-size:.7rem; font-weight:600; letter-spacing:.1em; color:var(--ink-soft); margin-bottom:6px;}
+
+.table-wrap{overflow:auto; border:1px solid var(--line); margin:16px 0; background:var(--bg);}
+.table-wrap.scroll{max-height:560px;}
+table{width:100%; border-collapse:collapse; font-size:.88rem; margin:0;}
+th,td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--line);}
+thead th{
+  position:sticky; top:0; z-index:1; background:var(--panel);
+  font-family:var(--font-mono); font-weight:600; font-size:.7rem; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink-soft); border-bottom:2px solid var(--accent); white-space:nowrap;
+}
+th.sortable{cursor:pointer; user-select:none;}
+th.sortable:hover{color:var(--ink);}
+th .arrow{display:inline-block; width:1em; color:var(--accent);}
+.th-sub{text-transform:none; font-weight:400; letter-spacing:0; font-size:.68rem; white-space:normal; margin:4px 0 0 auto; max-width:170px; line-height:1.3;}
+tbody tr:nth-child(even){background:var(--zebra);}
+tbody tr:hover{background:var(--accent-tint);}
+tr.group-row td{font-family:var(--font-mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); background:var(--panel);}
+td.num, th.num{font-family:var(--font-mono); text-align:right;}
+td.rating{background:linear-gradient(90deg,var(--accent-bar) var(--w,0%),transparent var(--w,0%)); font-weight:600;}
+tr.small-sample{opacity:.55;}
+#player-table th, #player-table td{padding:8px 7px;}
+#player-table th:first-child, #player-table td:first-child{padding-left:12px;}
+#player-table td:nth-child(2){white-space:nowrap;}
+
+.controls{display:flex; gap:10px; flex-wrap:wrap; margin:18px 0 4px;}
+select,input[type=text]{
+  font-family:var(--font-body); font-size:.85rem; padding:8px 12px;
+  border:1px solid var(--line); border-radius:0; background:var(--bg); color:var(--ink);
+}
+select:focus,input[type=text]:focus{border-color:var(--accent); outline:none; box-shadow:0 0 0 3px var(--accent-tint);}
+.count-note{font-size:.8rem; color:var(--ink-soft); margin:8px 0 0;}
+
+.chart-box{background:var(--bg); border:1px solid var(--line); padding:18px; margin:16px 0 6px;}
+.chart-canvas{position:relative; width:100%;}
+.chart-fallback{color:var(--ink-soft); font-size:.9rem; padding:28px 0; text-align:center;}
+.chart-note{font-size:.82rem; color:var(--ink-soft); margin:4px 0 16px;}
+
+.loadings-cell{text-align:center; font-family:var(--font-mono); font-size:.85rem;}
+img.scree{max-width:100%; border:1px solid var(--line); margin:16px 0; background:#fff;}
+
+.limits{list-style:none; padding:0; margin:0;}
+.limits li{border-left:3px solid var(--accent); padding:2px 0 2px 16px; margin:0 0 16px; max-width:78ch;}
+footer{color:var(--ink-soft); font-size:.8rem; margin-top:70px; border-top:1px solid var(--line); padding-top:20px; max-width:78ch;}
+footer::before{content:""; display:block; width:36px; height:4px; background:var(--accent); margin-bottom:14px;}
+
+@media (max-width:800px){
+  .layout{flex-direction:column;}
+  nav.side{width:100%; height:auto; position:relative; border-right:none; border-bottom:1px solid var(--line);}
+  nav.side .brandblock{padding:18px 20px 16px;}
+  nav.side .brand{font-size:1.7rem;}
+  nav.side .links{flex-direction:row; overflow-x:auto; gap:2px; padding:8px 12px;}
+  nav.side a{white-space:nowrap; border-left:none; border-bottom:3px solid transparent; padding:8px 10px;}
+  nav.side a:hover{border-bottom-color:var(--line);}
+  nav.side a.active{border-bottom-color:var(--accent);}
+  main{padding:28px 18px 80px;}
+  .hero{border-left-width:8px; padding-left:16px;}
+  section{padding-top:52px;}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="side">
+    <div class="brandblock">
+      <div class="brand">Eye<br>Test</div>
+      <div class="brand-sub">Ajax player performance · <span data-bind="n_matches">5</span> matches</div>
+    </div>
+    <div class="links">
+      <a href="#overview">Overview</a>
+      <a href="#players">Player Data</a>
+      <a href="#models">Model Performance</a>
+      <a href="#factors">Factor Analysis</a>
+      <a href="#video">Video Features</a>
+      <a href="#limitations">Limitations</a>
+    </div>
+  </nav>
+  <main>
+
+    <section id="overview">
+      <div class="hero">
+        <div class="eyebrow">Ajax · player performance analysis</div>
+        <h1>Eye Test</h1>
+        <p class="lede">A rating system built from structured match data, computer-vision-derived video features, machine learning, and exploratory factor analysis — scoped to Ajax players across the matches recorded so far.</p>
+      </div>
+
+      <div class="stat-strip" id="stat-strip"></div>
+
+      <h3 style="margin-top:40px;">How the rating works</h3>
+      <p class="lede">Each player-match row starts from hand-recorded FM26 stats (passing, attacking, defending, discipline), cleaned to remove unused-substitute appearances and flag small-sample cameos. From there, per-90 rates and composite features (goal contributions, defensive actions, a discipline score) are engineered. Match-level video features (how many players a detection model picked up per frame, how often the ball was visible) are joined in per match, and Random Forest and XGBoost models are trained on stats alone and on stats plus video, then checked two ways, including by holding out entire matches. That second check is what showed the apparent video gain doesn't transfer to a match the model hasn't seen. Exploratory factor analysis separately looks for underlying performance dimensions across the stat set without assuming what they are in advance.</p>
+      <p class="lede">This is a small, growing dataset — <span data-bind="n_matches">5</span> matches so far — so every result on this page is shown alongside how much it should currently be trusted, not just the number itself.</p>
+    </section>
+
+    <section id="players">
+      <h2>Player Data</h2>
+      <p class="lede">All <span data-bind="n_rows">78</span> player-match rows (unused substitutes already excluded). Click a column to sort. Rows in a lighter tone are small-sample appearances (under 10 minutes) — per-90 figures are more volatile for those. The bar behind each rating shows it out of 10.</p>
+      <div class="controls">
+        <select id="filter-match" aria-label="Filter by match"><option value="">All matches</option></select>
+        <select id="filter-position" aria-label="Filter by position"><option value="">All positions</option></select>
+        <input type="text" id="filter-name" placeholder="Search player…" aria-label="Search player">
+      </div>
+      <div class="table-wrap scroll">
+        <table id="player-table">
+          <thead><tr></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="count-note" id="player-count"></p>
+    </section>
+
+    <section id="models">
+      <h2>Model Performance</h2>
+      <p class="lede">Random Forest and XGBoost, both predicting FM26's own match rating from engineered features. Each model is trained twice, on stats only and on stats plus the reliable video features, so "did video features help" gets a direct answer. Two cross-validation schemes are shown: random 5-fold, and leave-one-match-out, where a whole match is held back and never seen in training. A dummy baseline that always predicts the mean rating is included as a floor.</p>
+
+      <div class="table-wrap">
+        <table id="model-metrics-table">
+          <thead><tr><th>Model</th><th class="num">MAE</th><th class="num">RMSE</th><th class="num">R²</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="chart-box"><div class="chart-canvas" style="height:300px"><canvas id="mae-chart" role="img" aria-label="Bar chart of mean absolute error by model under random 5-fold cross-validation"></canvas></div></div>
+      <p class="chart-note">Red bars use video features; grey bars are stats only or the dummy floor.</p>
+
+      <h3 style="margin-top:36px;">Does the video gain survive on an unseen match?</h3>
+      <div class="callout warn" id="video-finding"></div>
+      <div class="table-wrap">
+        <table id="lomo-table">
+          <thead><tr><th>Leave-one-match-out</th><th class="num">MAE</th><th class="num">RMSE</th><th class="num">R²</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="lede small" style="margin-top:8px;">R² is computed within each held-out match, where rating variance is small, so it goes negative easily; compare MAE.</p>
+
+      <h3 style="margin-top:36px;">Top feature importances (XGBoost, stats + video, random 5-fold fit)</h3>
+      <p class="lede small" id="importance-note"></p>
+      <div class="chart-box"><div class="chart-canvas" style="height:380px"><canvas id="importance-chart" role="img" aria-label="Horizontal bar chart of the ten largest XGBoost feature importances"></canvas></div></div>
+
+      <div class="callout warn" id="model-caveat"></div>
+    </section>
+
+    <section id="factors">
+      <h2>Exploratory Factor Analysis</h2>
+      <p class="lede">Run on outfield players only (goalkeeping stats are structurally different), excluding small-sample rows, using per-90 rates rather than raw counts. Factors were not assumed in advance — the count was chosen by parallel analysis, not picked to match a preconceived story.</p>
+
+      <div id="efa-adequacy"></div>
+
+      <h3 style="margin-top:32px;">Rotated factor loadings</h3>
+      <div class="table-wrap">
+        <table id="loadings-table"><thead><tr></tr></thead><tbody></tbody></table>
+      </div>
+      <p class="chart-note">Shading shows the size of each loading: red for positive, grey for negative. Bold marks loadings of 0.4 or more in size.</p>
+
+      <h3 style="margin-top:32px;">Scree plot</h3>
+      <img class="scree" id="scree-img" alt="Scree plot showing actual eigenvalues against the parallel analysis threshold">
+    </section>
+
+    <section id="video">
+      <h2>Video-Derived Features</h2>
+      <p class="lede">From week 3's YOLO detection + simple tracking pipeline, run against real match highlight clips. These are <strong>match-level</strong> — every Ajax player in a given match shares the same values, since basic detection can't tell individual players apart without jersey-number recognition, which was out of scope.</p>
+
+      <div class="callout warn" id="video-reliability"></div>
+
+      <div class="table-wrap">
+        <table id="video-table"><thead><tr></tr></thead><tbody></tbody></table>
+      </div>
+
+      <div class="callout" id="team-split"></div>
+    </section>
+
+    <section id="limitations">
+      <h2>Limitations</h2>
+      <p class="lede">Documented plainly, not buried — the state of this project after <span data-bind="n_matches">5</span> matches.</p>
+      <ul class="limits">
+        <li><strong>Small sample.</strong> <span data-bind="n_matches">5</span> matches, <span data-bind="n_rows">78</span> usable player-match rows. Every statistical result on this page (model metrics, factor structure) should be read as "pipeline verified," not "validated finding," until meaningfully more matches are recorded.</li>
+        <li><strong>FM26's own rating, not a real-world expert rating.</strong> The prediction target throughout is FM26's in-game match rating — a reference signal, not a professional scout or analyst's judgement.</li>
+        <li><strong>Video features are match-level, not per-player.</strong> Basic YOLO detection has no way to know which player is which without jersey-number recognition, which was scoped out. No individual player's video-derived activity is measured — only whole-match detection counts.</li>
+        <li><strong>Tracking-based video features are unreliable for this footage.</strong> FM26 highlight clips are a montage of short scenes; a simple centroid tracker with no scene-cut detection or camera-motion compensation can't distinguish a cut from someone leaving. Distance/sprint numbers reflect that, not player effort.</li>
+        <li id="limit-efa"></li>
+        <li id="limit-leak"></li>
+        <li><strong>Possible train/test leakage in model evaluation.</strong> The same player appears across matches; K-fold cross-validation (not GroupKFold) may let a player's identity leak between folds rather than the model purely learning from performance features.</li>
+        <li><strong>Highlight clips, not full match footage.</strong> Off-ball actions that don't make the highlight reel aren't captured by either the stats (hand-recorded from what's shown) or the video pipeline.</li>
+      </ul>
+    </section>
+
+    <footer>Eye Test — AI-Based Football Player Performance Analysis. Built on real, run data at every stage; no synthetic or placeholder figures are shown on this page.</footer>
+  </main>
+</div>
+
+<script id="app-data" type="application/json">__APP_DATA__</script>
+<script>
+const DATA = JSON.parse(document.getElementById('app-data').textContent);
+const fmt = (v, d=2) => (v === null || v === undefined || Number.isNaN(v)) ? '—' : Number(v).toFixed(d);
+const sgn = (v, d=3) => (v >= 0 ? '+' : '-') + Math.abs(v).toFixed(d);
+const mean = a => a.reduce((s, x) => s + x, 0) / a.length;
+
+function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+// ---- counts that must never be hardcoded: they change when matches are added ----
+document.querySelectorAll('[data-bind]').forEach(el => {
+  const v = DATA.summary[el.dataset.bind];
+  if (v !== undefined) el.textContent = v;
+});
+
+// ---- Chart.js: theme-aware defaults, and a graceful fallback if the CDN script didn't load ----
+if (typeof Chart !== 'undefined') {
+  Chart.defaults.color = cssVar('--ink-soft');
+  Chart.defaults.borderColor = cssVar('--line');
+  Chart.defaults.font.family = "Inter, system-ui, sans-serif";
+}
+function makeChart(canvasId, cfg){
+  const canvas = document.getElementById(canvasId);
+  try {
+    if (typeof Chart === 'undefined') throw new Error('Chart.js not loaded');
+    return new Chart(canvas, cfg);
+  } catch (e) {
+    canvas.closest('.chart-box').innerHTML =
+      '<div class="chart-fallback">Chart unavailable — Chart.js could not be loaded from its CDN.</div>';
+  }
+}
+
+// ---- Overview stat strip ----
+(function(){
+  const s = DATA.summary;
+  const kmo = DATA.efa ? DATA.efa.adequacy.kmo_overall : null;
+  const items = [
+    [s.n_matches, 'Matches'],
+    [s.n_players, 'Ajax players'],
+    [s.n_rows, 'Player-match rows'],
+    [fmt(DATA.phase3.leave_one_match_out.stats_only.random_forest.mae, 3), 'Held-out-match MAE (RF)'],
+    [kmo === null ? '—' : fmt(kmo, 3), 'EFA KMO score'],
+  ];
+  document.getElementById('stat-strip').innerHTML = items.map(([n,l]) =>
+    `<div class="stat"><div class="num">${n}</div><div class="label">${l}</div></div>`).join('');
+})();
+
+// ---- Player table ----
+(function(){
+  const cols = ['match_id','player_name','position','minutes','rating','goals','assists',
+    'key_passes','xg','xa','tackles_completed_pct','interceptions','clearances',
+    'goal_contributions','defensive_actions','discipline_score'];
+  const labels = {match_id:'Match',player_name:'Player',position:'Pos',minutes:'Min',rating:'Rating',
+    goals:'G',assists:'A',key_passes:'KP',xg:'xG',xa:'xA',tackles_completed_pct:'Tkl %',
+    interceptions:'Int',clearances:'Clr',goal_contributions:'G+A',defensive_actions:'Def',
+    discipline_score:'Disc'};
+  const decimals = {minutes:0, rating:1, goals:0, assists:0, key_passes:0, xg:2, xa:2,
+    tackles_completed_pct:0, interceptions:0, clearances:0, goal_contributions:0,
+    defensive_actions:0, discipline_score:0};
+  const numCols = new Set(Object.keys(decimals));
+
+  const rows = DATA.players.slice();
+  let sortCol = 'rating', sortDir = -1;
+  const theadRow = document.querySelector('#player-table thead tr');
+
+  function renderHead(){
+    theadRow.innerHTML = cols.map(c =>
+      `<th class="sortable ${numCols.has(c)?'num':''}" data-col="${c}">${labels[c]}` +
+      `<span class="arrow">${c === sortCol ? (sortDir === 1 ? '▲' : '▼') : ''}</span></th>`).join('');
+    theadRow.querySelectorAll('th').forEach(th => th.addEventListener('click', () => {
+      const c = th.dataset.col;
+      sortDir = (sortCol === c) ? -sortDir : (numCols.has(c) ? -1 : 1);
+      sortCol = c;
+      renderHead(); render();
+    }));
+  }
+
+  function cell(r, c){
+    if (c === 'rating') {
+      const w = Math.max(0, Math.min(100, r.rating * 10));
+      return `<td class="num rating" style="--w:${w}%">${fmt(r.rating, 1)}</td>`;
+    }
+    return numCols.has(c)
+      ? `<td class="num">${fmt(r[c], decimals[c])}</td>`
+      : `<td>${r[c]}</td>`;
+  }
+
+  function render(){
+    const matchVal = document.getElementById('filter-match').value;
+    const posVal = document.getElementById('filter-position').value;
+    const nameVal = document.getElementById('filter-name').value.toLowerCase();
+
+    const filtered = rows.filter(r =>
+      (!matchVal || r.match_id === matchVal) &&
+      (!posVal || r.position === posVal) &&
+      (!nameVal || r.player_name.toLowerCase().includes(nameVal))
+    );
+    filtered.sort((a,b) => (a[sortCol] > b[sortCol] ? 1 : a[sortCol] < b[sortCol] ? -1 : 0) * sortDir);
+
+    document.querySelector('#player-table tbody').innerHTML = filtered.map(r =>
+      `<tr class="${r.small_sample ? 'small-sample' : ''}">${cols.map(c => cell(r, c)).join('')}</tr>`).join('');
+    document.getElementById('player-count').textContent = `Showing ${filtered.length} of ${rows.length} rows`;
+  }
+
+  const matches = [...new Set(rows.map(r => r.match_id))].sort();
+  const positions = [...new Set(rows.map(r => r.position))].sort();
+  document.getElementById('filter-match').innerHTML += matches.map(m => `<option value="${m}">${m}</option>`).join('');
+  document.getElementById('filter-position').innerHTML += positions.map(p => `<option value="${p}">${p}</option>`).join('');
+  ['filter-match','filter-position','filter-name'].forEach(id => document.getElementById(id).addEventListener('input', render));
+
+  renderHead();
+  render();
+})();
+
+// ---- Model metrics table, charts, and the video-gain finding ----
+(function(){
+  const kf_s = DATA.phase4.stats_only;
+  const kf_v = DATA.phase4.stats_plus_video;
+  const lo3 = DATA.phase3.leave_one_match_out;
+  const lo4 = DATA.phase4.leave_one_match_out;
+  const rowsData = [
+    ['Random Forest (stats only)', kf_s.random_forest],
+    ['Random Forest (+ video)', kf_v.random_forest],
+    ['XGBoost (stats only)', kf_s.xgboost],
+    ['XGBoost (+ video)', kf_v.xgboost],
+    ['Dummy (mean)', kf_s.dummy_mean_baseline],
+  ];
+  const rowHtml = (name, m) =>
+    `<tr><td>${name}</td><td class="num">${fmt(m.mae,3)}</td><td class="num">${fmt(m.rmse,3)}</td><td class="num">${fmt(m.r2,3)}</td></tr>`;
+  document.querySelector('#model-metrics-table tbody').innerHTML =
+    '<tr class="group-row"><td colspan="4">Random 5-fold CV</td></tr>' + rowsData.map(([n, m]) => rowHtml(n, m)).join('');
+
+  makeChart('mae-chart', {
+    type: 'bar',
+    data: {
+      labels: rowsData.map(r=>r[0]),
+      datasets: [{ label: 'MAE (lower is better)', data: rowsData.map(r=>r[1].mae),
+        backgroundColor: rowsData.map(r => r[0].includes('+ video') ? cssVar('--accent') : cssVar('--ink-soft')) }]
+    },
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, title:{display:true,text:'MAE, random 5-fold CV (the video gain here is partly match fingerprinting - see below)'}},
+      scales:{y:{beginAtZero:true, title:{display:true, text:'MAE (lower is better)'}}} }
+  });
+
+  document.querySelector('#lomo-table tbody').innerHTML = [
+    rowHtml('Random Forest (stats only)', lo3.stats_only.random_forest),
+    rowHtml('Random Forest (+ video)', lo3.stats_plus_video.random_forest),
+    rowHtml('XGBoost (stats only)', lo4.stats_only.xgboost),
+    rowHtml('XGBoost (+ video)', lo4.stats_plus_video.xgboost),
+    rowHtml('Dummy (mean)', lo3.stats_only.dummy_mean_baseline),
+  ].join('');
+
+  // the finding's numbers come from the metrics files, so they can't drift from the tables above
+  const d = {
+    rfKf: kf_v.random_forest.mae - kf_s.random_forest.mae,
+    xgbKf: kf_v.xgboost.mae - kf_s.xgboost.mae,
+    rfLo: lo3.stats_plus_video.random_forest.mae - lo3.stats_only.random_forest.mae,
+    xgbLo: lo4.stats_plus_video.xgboost.mae - lo4.stats_only.xgboost.mae,
+  };
+  const nf = DATA.phase3.noise_floor_check;
+  const noiseSentence = nf
+    ? ` That remaining ${sgn(d.xgbLo)} was checked against a noise floor — adding a genuinely meaningless random per-match number moves MAE by ${sgn(nf.random_feature_delta_range[0])} to ${sgn(nf.random_feature_delta_range[1])} just by chance with only ${DATA.summary.n_matches} match groups (repeated trials, Random Forest). ${sgn(d.xgbLo)} sits inside that band.`
+    : '';
+  document.getElementById('video-finding').innerHTML =
+    `<div class="tag">FINDING</div>
+     <p>Under random 5-fold, adding video features changes MAE by ${sgn(d.rfKf)} for Random Forest and ${sgn(d.xgbKf)} for XGBoost. But every video feature has just one value per match, so a model can use it to recognise <em>which match</em> a row came from and learn "ratings run higher in this match" from other rows of the same match. Holding out a whole match removes that shortcut: the change becomes ${sgn(d.rfLo)} for Random Forest and ${sgn(d.xgbLo)} for XGBoost.${noiseSentence}
+     <strong>Verdict: no reliable evidence video features help either model predict an unseen match — the random 5-fold improvement was match fingerprinting, not signal.</strong></p>`;
+
+  const imp = kf_v.xgboost_top_10_feature_importances;
+  const videoNames = new Set(['avg_players_detected_per_frame','max_players_detected_per_frame','ball_detection_rate',
+    'avg_ajax_players_detected_per_frame','max_ajax_players_detected_per_frame',
+    'avg_not_ajax_players_detected_per_frame','max_not_ajax_players_detected_per_frame']);
+  makeChart('importance-chart', {
+    type: 'bar',
+    data: {
+      labels: imp.map(i=>i.feature),
+      datasets: [{ label: 'Importance', data: imp.map(i=>i.importance),
+        backgroundColor: imp.map(i => videoNames.has(i.feature) ? cssVar('--accent') : cssVar('--ink-soft')) }]
+    },
+    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true}} }
+  });
+
+  // limitation bullet: the leakage numbers, straight from the same metrics
+  const distinct = new Set(DATA.video.map(v => v.avg_players_detected_per_frame)).size;
+  document.getElementById('limit-leak').innerHTML =
+    `<strong>Video features leak match identity under random cross-validation.</strong> They have one value per match (${distinct} distinct values in total), so under random K-fold a model can use them to recognise the match and learn its rating level. Leave-one-match-out CV removes that shortcut. Random Forest's MAE goes ${fmt(kf_s.random_forest.mae,3)} → ${fmt(kf_v.random_forest.mae,3)} under K-fold but ${fmt(lo3.stats_only.random_forest.mae,3)} → ${fmt(lo3.stats_plus_video.random_forest.mae,3)} leaving a match out; XGBoost's goes ${fmt(kf_s.xgboost.mae,3)} → ${fmt(kf_v.xgboost.mae,3)} and ${fmt(lo4.stats_only.xgboost.mae,3)} → ${fmt(lo4.stats_plus_video.xgboost.mae,3)}. With so few held-out matches, differences of this size are within noise.`;
+})();
+
+// ---- model caveat + importance note + video reliability: all from the data, nothing hardcoded ----
+(function(){
+  const lo3 = DATA.phase3.leave_one_match_out;
+  const rf = lo3.stats_only.random_forest.mae, dummy = lo3.stats_only.dummy_mean_baseline.mae;
+  document.getElementById('model-caveat').innerHTML =
+    `<div class="tag">CAVEAT</div>
+     <p>${DATA.summary.n_rows} rows across ${DATA.summary.n_matches} matches is small. Even the stricter leave-one-match-out scores (Random Forest MAE ${fmt(rf,2)} against a ${fmt(dummy,2)} dummy floor) say the models learn something from the match stats themselves, but they are not a reliable estimate of accuracy on a new match yet. The same player also appears in several matches, so a player-level split would leak too; there aren't enough matches for that to be meaningful.</p>`;
+
+  const videoNames = ['avg_players_detected_per_frame','max_players_detected_per_frame','ball_detection_rate',
+    'avg_ajax_players_detected_per_frame','max_ajax_players_detected_per_frame',
+    'avg_not_ajax_players_detected_per_frame','max_not_ajax_players_detected_per_frame'];
+  const imp = DATA.phase4.stats_plus_video.xgboost_top_10_feature_importances;
+  const rankedVideo = imp.map((i, idx) => ({name: i.feature, rank: idx + 1})).filter(i => videoNames.includes(i.name));
+  let note = 'Red bars are video features.';
+  if (rankedVideo.length) {
+    const top = rankedVideo[0];
+    const distinct = new Set(DATA.video.map(v => v[top.name])).size;
+    note += ` <span class="mono">${top.name}</span> ranks #${top.rank}, yet it takes only ${distinct} distinct value${distinct === 1 ? '' : 's'} across ${DATA.summary.n_matches} matches (one per match), which is what a match label looks like to a tree model.`;
+  }
+  document.getElementById('importance-note').innerHTML = note;
+
+  const flagged = DATA.video.filter(v => v.track_fragmentation_warning).length;
+  const avgs = DATA.video.map(v => v.avg_players_detected_per_frame);
+  const lo = Math.min(...avgs), hi = Math.max(...avgs);
+  document.getElementById('video-reliability').innerHTML =
+    `<div class="tag">FINDING</div>
+     <p>${flagged} of ${DATA.video.length} matches triggered a track-fragmentation warning: tracking-based columns (<span class="mono">avg_track_distance_px</span>, <span class="mono">total_sprint_events</span>) measure scene cuts and camera motion in this highlight footage, not real player movement, and are not treated as reliable. <span class="mono">avg_players_detected_per_frame</span> and <span class="mono">ball_detection_rate</span> don't need tracking continuity, so they held up — landing at ${lo.toFixed(1)}–${hi.toFixed(1)} detected players per frame, in the range expected for a match where detection always misses some players.</p>`;
+})();
+
+// ---- EFA ----
+(function(){
+  const box = document.getElementById('efa-adequacy');
+  const E = DATA.efa;
+  const L = DATA.loadings;
+  const nFactors = L.factors.length;
+
+  if (!E) {
+    box.innerHTML = `<div class="callout warn"><div class="tag">SAMPLING ADEQUACY</div>
+      <p>No <span class="mono">efa_adequacy.json</span> was found, so KMO and sample-size figures aren't shown. Re-run <span class="mono">python -m src.factor_analysis.run_efa</span>.</p></div>`;
+    document.getElementById('limit-efa').innerHTML =
+      '<strong>Factor analysis adequacy not reported.</strong> Re-run the factor analysis step to populate it.';
+  } else {
+    const a = E.adequacy;
+    const ok = a.kmo_adequate;
+    const perVar = a.obs_per_variable >= 5 ? 'within' : 'under';
+    const bart = a.bartlett_significant
+      ? `Bartlett's test is significant (${a.bartlett_p_value < 0.001 ? 'p &lt; 0.001' : 'p = ' + a.bartlett_p_value}), meaning there is real correlation structure, but that's a weaker bar than KMO.`
+      : `Bartlett's test is not significant, so there may be little correlation structure to find.`;
+    const verdict = ok
+      ? `The ${nFactors}-factor solution below still comes from a modest sample, so treat it as exploratory.`
+      : `The ${nFactors}-factor solution below is shown for transparency, not as a validated result.`;
+    box.innerHTML = `<div class="callout ${ok ? '' : 'warn'}"><div class="tag">SAMPLING ADEQUACY</div>
+      <p><strong>KMO = ${fmt(a.kmo_overall, 3)}</strong> (${ok ? 'meets' : 'below'} the 0.6 adequacy threshold) on ${a.n_obs} outfield rows across ${a.n_vars} variables — about ${a.obs_per_variable} observations per variable, ${perVar} the 5–10+ rule of thumb. ${bart} ${verdict}</p></div>`;
+    document.getElementById('limit-efa').innerHTML =
+      `<strong>Factor analysis sampling adequacy is ${ok ? 'acceptable' : 'inadequate'} (KMO = ${fmt(a.kmo_overall, 3)}, ${ok ? 'above' : 'below'} the 0.6 threshold).</strong> ${nFactors} factors were extracted from ${a.n_obs} rows; ${ok ? 'the structure is still exploratory and' : 'whatever structure the loadings show is encouraging at best and'} should not yet be reported as a confirmed result.`;
+  }
+
+  // header: name each factor by the variables that actually load on it, not by a label written in advance
+  const headerFor = j => {
+    const top = L.variables.map((v, i) => [v, L.matrix[i][j]])
+      .filter(([, x]) => Math.abs(x) >= 0.4)
+      .sort((p, q) => Math.abs(q[1]) - Math.abs(p[1])).slice(0, 3).map(([v]) => v);
+    return `Factor ${j + 1}<div class="th-sub">${top.length ? top.join(', ') : 'no loading ≥ 0.4'}</div>`;
+  };
+  document.querySelector('#loadings-table thead tr').innerHTML =
+    '<th>Variable</th>' + L.factors.map((f, j) => `<th class="num">${headerFor(j)}</th>`).join('');
+  document.querySelector('#loadings-table tbody').innerHTML = L.variables.map((v,i) =>
+    '<tr><td>' + v + '</td>' + L.matrix[i].map(val => {
+      const alpha = (Math.min(Math.abs(val), 1) * 0.5).toFixed(2);
+      const rgb = val >= 0 ? 'var(--accent-rgb)' : 'var(--neutral-rgb)';
+      const strong = Math.abs(val) >= 0.4;
+      return `<td class="loadings-cell" style="background:rgba(${rgb},${alpha});${strong ? 'font-weight:600;' : ''}">${fmt(val,2)}</td>`;
+    }).join('') + '</tr>').join('');
+
+  document.getElementById('scree-img').src = 'data:image/png;base64,' + DATA.scree_b64;
+})();
+
+// ---- Video features table + team-split note ----
+(function(){
+  const cols = ['match_id','avg_players_detected_per_frame','avg_ajax_players_detected_per_frame',
+    'avg_not_ajax_players_detected_per_frame','max_players_detected_per_frame',
+    'ball_detection_rate','track_fragmentation_warning'];
+  const labels = {match_id:'Match', avg_players_detected_per_frame:'Avg players/frame',
+    avg_ajax_players_detected_per_frame:'Avg Ajax/frame', avg_not_ajax_players_detected_per_frame:'Avg not-Ajax/frame',
+    max_players_detected_per_frame:'Max players/frame', ball_detection_rate:'Ball detection',
+    track_fragmentation_warning:'Fragmentation flag'};
+  const textCols = new Set(['match_id','track_fragmentation_warning']);
+  document.querySelector('#video-table thead tr').innerHTML = cols.map(c =>
+    `<th class="${textCols.has(c) ? '' : 'num'}">${labels[c]}</th>`).join('');
+  document.querySelector('#video-table tbody').innerHTML = DATA.video.map(r =>
+    '<tr>' + cols.map(c => {
+      if (c === 'track_fragmentation_warning') {
+        return `<td style="color:${r[c] ? 'var(--warn)' : 'var(--ink)'}">${r[c] ? 'Yes — unreliable' : 'No'}</td>`;
+      }
+      if (c === 'match_id') return `<td>${r[c]}</td>`;
+      const dec = c === 'max_players_detected_per_frame' ? 0 : (c === 'ball_detection_rate' ? 3 : 2);
+      return `<td class="num">${fmt(r[c], dec)}</td>`;
+    }).join('') + '</tr>').join('');
+
+  const split = DATA.video.filter(v => v.avg_ajax_players_detected_per_frame > 0);
+  if (split.length) {
+    const ratios = split.map(v => v.avg_not_ajax_players_detected_per_frame / v.avg_ajax_players_detected_per_frame);
+    document.getElementById('team-split').innerHTML =
+      `<div class="tag">TEAM SPLIT</div>
+       <p>The Ajax and not-Ajax counts come from a shirt-colour classifier, calibrated per match and confirmed by eye against sample crops. Across matches the not-Ajax count averages <strong>${mean(ratios).toFixed(2)}×</strong> the Ajax count (range ${Math.min(...ratios).toFixed(2)}–${Math.max(...ratios).toFixed(2)}×). Some excess is expected, since not-Ajax also includes the opponent, referee and staff (roughly 1.1–1.3×), so Ajax is probably still somewhat under-counted. Two calibration bugs were found and fixed along the way; the remaining gap was accepted rather than chased further.</p>`;
+  } else {
+    document.getElementById('team-split').remove();
+  }
+})();
+
+// ---- scroll spy ----
+(function(){
+  const links = [...document.querySelectorAll('nav.side a')];
+  const sections = links.map(l => document.querySelector(l.getAttribute('href')));
+  function update(){
+    let idx = 0;
+    sections.forEach((s,i) => { if (s.getBoundingClientRect().top < 140) idx = i; });
+    links.forEach(l => l.classList.remove('active'));
+    links[idx].classList.add('active');
+  }
+  window.addEventListener('scroll', update, {passive:true});
+  update();
+})();
+</script>
+</body>
+</html>
