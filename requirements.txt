@@ -1,27 +1,60 @@
-# --- Phase 1-2 ---
+# ==============================================================================
+# Eye Test: AI-Based Football Player Performance Analysis
+# Dependencies organized by Project Phase & Pipeline Architecture
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Phase 1 & 2: Dataset Pipeline, Data Cleaning & Feature Engineering
+# ------------------------------------------------------------------------------
+# Ingestion, validation, match file aggregation, per-90 rates, and composite metrics
 pandas>=2.0
 numpy>=1.24
-pytest>=7.0
 
-# --- Phase 3 ---
+# ------------------------------------------------------------------------------
+# Phase 3: Baseline Predictive Modeling (Random Forest)
+# ------------------------------------------------------------------------------
+# Cross-validation, baseline regressors, feature importance, and model persistence
 scikit-learn>=1.3
 joblib>=1.3
 
-# --- Phase 4 ---
+# ------------------------------------------------------------------------------
+# Phase 4: Advanced Modeling & Model Comparison (XGBoost)
+# ------------------------------------------------------------------------------
+# Gradient boosting regression and benchmark evaluation against Random Forest
 xgboost>=2.0
 
-# --- Week 3: CV pipeline ---
+# ------------------------------------------------------------------------------
+# Week 3 (CV Pipeline): Computer Vision, Tracking & Team Classification
+# ------------------------------------------------------------------------------
+# YOLO player/ball detection, object tracking, and jersey color clustering
 opencv-python>=4.8
 ultralytics>=8.0
 
-# --- Phase 9: Exploratory Factor Analysis ---
+# ------------------------------------------------------------------------------
+# Phase 8: Video & Match Data Integration
+# ------------------------------------------------------------------------------
+# Merges match-level CV metrics with player-match tabular statistics
+# (Uses pandas>=2.0 and numpy>=1.24 from Phase 1 & 2)
+
+# ------------------------------------------------------------------------------
+# Phase 9: Exploratory Factor Analysis (EFA)
+# ------------------------------------------------------------------------------
+# Latent performance dimensions, statistical adequacy tests (KMO & Bartlett's),
+# and Scree plot factor extraction visualizations.
+# Note: KMO, Bartlett's test, and Varimax rotation are natively implemented
+# in src/factor_analysis/ without requiring an external factor-analyzer package.
+scipy>=1.10
 matplotlib>=3.7
-# note: factor_analyzer package is NOT used - KMO, Bartlett's test, and
-# varimax rotation are implemented directly in src/factor_analysis/
-# (that package needs network to install, unavailable in the dev sandbox)
-# opencv-python      (Phase 5: computer vision)
-# ultralytics        (Phase 5: YOLO)
-# scipy              (Phase 9: factor analysis - KMO, Bartlett's test)
-# factor-analyzer    (Phase 9: EFA, factor rotation)
-# fastapi, uvicorn   (Phase 10: backend API for dashboard)
-# matplotlib         (Phase 9/10: scree plots, charts)
+
+# ------------------------------------------------------------------------------
+# Phase 10: Interactive Performance Dashboard
+# ------------------------------------------------------------------------------
+# Generates self-contained static HTML/JS dashboard without requiring a backend server.
+# (Uses pandas>=2.0 and standard library)
+# Optional for automated headless browser render verification:
+# playwright>=1.40
+
+# ------------------------------------------------------------------------------
+# Development, Testing & Verification
+# ------------------------------------------------------------------------------
+pytest>=7.0
